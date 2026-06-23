@@ -1,0 +1,144 @@
+{
+  "info": {
+    "name": "Patient Management - Local (IntelliJ + PostgreSQL)",
+    "description": "Local run collection. Direct service ports AND via API Gateway (4004). Login first to get a JWT; the token is saved automatically and reused for patient calls through the gateway.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "authUrl", "value": "http://localhost:4005" },
+    { "key": "patientUrl", "value": "http://localhost:4000" },
+    { "key": "gatewayUrl", "value": "http://localhost:4004" },
+    { "key": "jwt", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (get JWT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const token = pm.response.json().token;",
+                  "  pm.collectionVariables.set('jwt', token);",
+                  "  console.log('JWT saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@test.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": { "raw": "{{authUrl}}/login", "host": ["{{authUrl}}"], "path": ["login"] }
+          }
+        },
+        {
+          "name": "Validate token",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": { "raw": "{{authUrl}}/validate", "host": ["{{authUrl}}"], "path": ["validate"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient - Direct (port 4000, no JWT)",
+      "item": [
+        {
+          "name": "Get all patients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{patientUrl}}/patients", "host": ["{{patientUrl}}"], "path": ["patients"] }
+          }
+        },
+        {
+          "name": "Create patient",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"address\": \"42 Oak Street\",\n  \"dateOfBirth\": \"1990-04-12\",\n  \"registeredDate\": \"2024-05-01\"\n}"
+            },
+            "url": { "raw": "{{patientUrl}}/patients", "host": ["{{patientUrl}}"], "path": ["patients"] }
+          }
+        },
+        {
+          "name": "Update patient",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith Updated\",\n  \"email\": \"jane.smith@example.com\",\n  \"address\": \"99 New Address\",\n  \"dateOfBirth\": \"1990-04-12\"\n}"
+            },
+            "url": {
+              "raw": "{{patientUrl}}/patients/PUT_PATIENT_ID_HERE",
+              "host": ["{{patientUrl}}"],
+              "path": ["patients", "PUT_PATIENT_ID_HERE"]
+            }
+          }
+        },
+        {
+          "name": "Delete patient",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{patientUrl}}/patients/PUT_PATIENT_ID_HERE",
+              "host": ["{{patientUrl}}"],
+              "path": ["patients", "PUT_PATIENT_ID_HERE"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient - Via Gateway (port 4004, JWT required)",
+      "item": [
+        {
+          "name": "Get all patients (gateway)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/patients",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "patients"]
+            }
+          }
+        },
+        {
+          "name": "Create patient (gateway)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bob Jones\",\n  \"email\": \"bob.jones@example.com\",\n  \"address\": \"12 Pine Road\",\n  \"dateOfBirth\": \"1982-09-30\",\n  \"registeredDate\": \"2024-06-01\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/api/patients",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "patients"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
